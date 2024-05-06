@@ -34,4 +34,28 @@ export async function usersRoutes(app: FastifyInstance) {
 
     return reply.status(201).send()
   })
+
+  app.get('/', async (request) => {
+    const { sessionId } = request.cookies
+
+    const users = await knex('users').where('session_id', sessionId).select()
+
+    return { users }
+  })
+
+  app.get('/:id', async (request) => {
+    const getUserParamsSchema = z.object({
+      id: z.string().uuid(),
+    })
+
+    const { id } = getUserParamsSchema.parse(request.params)
+
+    const { sessionId } = request.cookies
+
+    const user = await knex('users')
+      .where({ session_id: sessionId, id })
+      .first()
+
+    return { user }
+  })
 }
