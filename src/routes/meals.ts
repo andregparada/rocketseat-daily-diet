@@ -5,38 +5,80 @@ import { knex } from '../database'
 import { checkSessionIdExists } from '../middlewares/check-session-id-exists'
 
 export async function mealsRoutes(app: FastifyInstance) {
-  app.get(
+  app.post(
     '/',
     {
       preHandler: [checkSessionIdExists],
     },
-    async () => {
-      return console.log('ok')
+    async (request) => {
+      const createMealBodySchema = z.object({
+        name: z.string(),
+        description: z.string(),
+        is_on_diet: z.enum(['true', 'false']),
+      })
+
+      const {
+        name,
+        description,
+        is_on_diet: isOnDiet,
+      } = createMealBodySchema.parse(request.body)
+
+      const { sessionId } = request.cookies
+
+      const user = await knex('users')
+        .where({ session_id: sessionId })
+        .first()
+        .select('id')
+
+      if (!user) {
+        return { error: 'User not found' }
+      }
+
+      await knex('meals').insert({
+        id: randomUUID(),
+        user_id: user.id,
+        name,
+        description,
+        is_on_diet: isOnDiet,
+      })
     },
   )
-  app.post('/', async (request) => {
-    const createMealBodySchema = z.object({
-      name: z.string(),
-      description: z.string(),
-      is_on_diet: z.enum(['true', 'false']),
-    })
 
-    const { name, description, is_on_diet } = createMealBodySchema.parse(
-      request.body,
-    )
-    const { sessionId } = request.cookies
+  app.put(
+    '/:id',
+    {
+      preHandler: [checkSessionIdExists],
+    },
+    async (request) => {
+      const getTransactionParamsSchema = z.object({
+        id: z.string().uuid(),
+      })
 
-    const { id: userId } = await knex('users')
-      .where({ session_id: sessionId })
-      .first()
-      .select('id')
+      const { id } = getTransactionParamsSchema.parse(request.params)
 
-    await knex('meals').insert({
-      id: randomUUID(),
-      user_id: userId,
-      name,
-      description,
-      is_on_diet,
-    })
-  })
+      const createMealBodySchema = z.object({
+        name: z.string(),
+        description: z.string(),
+        is_on_diet: z.enum(['true', 'false']),
+      })
+
+      const {
+        name,
+        description,
+        is_on_diet: isOnDiet,
+      } = createMealBodySchema.parse(request.body)
+
+      const meal = await knex('meals').where({ id }).first()
+
+      if (!meal) {
+        return { error: 'User not found' }
+      }
+
+      meal.name = name
+      meal.description = description
+      meal.is_on_diet = isOnDiet
+
+      await knex('meals').where({ id }).first().update(meal)
+    },
+  )
 }
