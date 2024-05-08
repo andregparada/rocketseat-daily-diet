@@ -10,7 +10,7 @@ export async function mealsRoutes(app: FastifyInstance) {
     {
       preHandler: [checkSessionIdExists],
     },
-    async (request) => {
+    async (request, reply) => {
       const createMealBodySchema = z.object({
         name: z.string(),
         description: z.string(),
@@ -41,6 +41,8 @@ export async function mealsRoutes(app: FastifyInstance) {
         description,
         is_on_diet: isOnDiet,
       })
+
+      return reply.status(201).send()
     },
   )
 
@@ -49,12 +51,12 @@ export async function mealsRoutes(app: FastifyInstance) {
     {
       preHandler: [checkSessionIdExists],
     },
-    async (request) => {
-      const getTransactionParamsSchema = z.object({
+    async (request, reply) => {
+      const getMealParamsSchema = z.object({
         id: z.string().uuid(),
       })
 
-      const { id } = getTransactionParamsSchema.parse(request.params)
+      const { id } = getMealParamsSchema.parse(request.params)
 
       const createMealBodySchema = z.object({
         name: z.string(),
@@ -79,6 +81,26 @@ export async function mealsRoutes(app: FastifyInstance) {
       meal.is_on_diet = isOnDiet
 
       await knex('meals').where({ id }).first().update(meal)
+
+      return reply.status(201).send()
     },
+  )
+
+  app.delete(
+    '/:id',
+    {
+      preHandler: [checkSessionIdExists],
+    },
+    async (request) => {
+      const getMealParamsSchema = z.object({
+        id: z.string().uuid(),
+      })
+
+      const { id } = getMealParamsSchema.parse(request.params)
+
+
+
+      return
+    }
   )
 }
