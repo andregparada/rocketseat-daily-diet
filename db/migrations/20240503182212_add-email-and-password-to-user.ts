@@ -8,7 +8,7 @@ export async function up(knex: Knex): Promise<void> {
 }
 
 export async function down(knex: Knex): Promise<void> {
-  await knex.schema.alterTable('transactions', (table) => {
+  await knex.schema.alterTable('users', (table) => {
     table.dropColumn('email')
     table.dropColumn('password')
   })

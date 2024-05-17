@@ -3,7 +3,7 @@ import { execSync } from 'node:child_process'
 import request from 'supertest'
 import { app } from '../src/app'
 
-describe('Users routes', () => {
+describe('Meals routes', () => {
   beforeAll(async () => {
     await app.ready()
   })
@@ -17,8 +17,8 @@ describe('Users routes', () => {
     execSync('npm run knex migrate:latest')
   })
 
-  it('should be able to create user', async () => {
-    await request(app.server)
+  it('should be able to create meal', async () => {
+    const createUserResponse = await request(app.server)
       .post('/users')
       .send({
         name: 'Usuário teste',
@@ -26,27 +26,25 @@ describe('Users routes', () => {
         password: '123',
       })
       .expect(201)
-  })
-
-  it('should be able to list all users', async () => {
-    const createUserResponse = await request(app.server).post('/users').send({
-      name: 'Usuário teste',
-      email: 'usuario@test.com',
-      password: '123',
-    })
 
     const cookies = createUserResponse.get('Set-Cookie') ?? []
 
-    const listUsersResponse = await request(app.server)
+    const listUsers = await request(app.server)
       .get('/users')
       .set('Cookie', cookies)
       .expect(200)
 
-    expect(listUsersResponse.body.users).toEqual([
-      expect.objectContaining({
-        name: 'Usuário teste',
-        email: 'usuario@test.com',
-      }),
-    ])
+    const userId = listUsers.body.users[0].id
+
+    await request(app.server)
+      .post('/meals')
+      .set('Cookie', cookies)
+      .send({
+        user_id: userId,
+        name: 'Refeição teste',
+        description: 'descrição',
+        is_on_diet: 'true',
+      })
+      .expect(201)
   })
 })
